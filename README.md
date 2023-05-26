@@ -55,7 +55,7 @@ Please ensure to follow all guidelines and terms of service set by Twitter while
     ```env
     USERNAME=<your_twitter_username>
     COOKIE=<your_twitter_cookie>
-    AUTHORIZATION=<your_twitter_authorization>
+    AUTHORIZATION=<your_twitter_bearer_token>
     CSRF_TOKEN=<your_twitter_csrf_token>
     GRAPHQL_ID=<your_twitter_graphql_id>
     ```
