@@ -1,6 +1,6 @@
 # TweetBurner
 
-This Python script can be used to delete all of your tweets using Twitter's API.
+This Python script can be used to delete all of your tweets using Twitter's API. Please request tweet archive from browser before use (need to wait for 24 hours), we will need the tweets.js file to execute.
 
 ## Requirements
 
@@ -15,8 +15,11 @@ This Python script can be used to delete all of your tweets using Twitter's API.
     git clone https://github.com/utopictown/tweetburner.git
     cd tweetburner
     ```
+2. **Prepare tweet list
+   - Replace tweets.json with tweets.js from twitter archive
+   - delete `window.YTD.tweets.part0 = ` from file, the goal is to make it a valid .json file
 
-2. **Set up the environment and install dependencies**
+3. **Set up the environment and install dependencies**
 
    - If you are using **pip** (optionally within a virtual environment), run:
 
@@ -31,7 +34,7 @@ This Python script can be used to delete all of your tweets using Twitter's API.
         conda activate tweetburner
         ```
 
-3. **Set up your environment variables**
+4. **Set up your environment variables**
 
     Create a file named `.env` in the root directory of the project and set the following variables. You can obtain these values from your browser's developer tools (Network tab) when making a request to Twitter (make sure you're authenticated first):
 
@@ -49,7 +52,7 @@ This Python script can be used to delete all of your tweets using Twitter's API.
     GRAPHQL_ID=<your_twitter_graphql_id>
     ```
 
-4. **Run the script**
+5. **Run the script**
 
     ```sh
     python main.py
