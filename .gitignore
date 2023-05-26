@@ -1,0 +1,4 @@
+# .gitignore
+__pycache__/
+*.py[cod]
+*.env  # Ignore actual .env file
