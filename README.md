@@ -1,6 +1,6 @@
 # TweetBurner
 
-This Python script can be used to delete all of your tweets using Twitter's API. Please request tweet archive from browser before use (need to wait for 24 hours), we will need the tweets.js file to execute.
+This Python script can be used to delete all of your tweets without using Twitter's API / password. It will need your twitter request headers data which you can find in network tab from browser. Please get tweet archive file which you can request from twitter (only on browser) before use (need to wait for 24 hours), we will need the tweets.js file to execute.
 
 ## Requirements
 
