@@ -24,8 +24,8 @@ Please ensure to follow all guidelines and terms of service set by Twitter while
     cd tweetburner
     ```
 2. **Prepare tweet list
-   - Replace tweets.json with tweets.js from twitter archive
-   - delete `window.YTD.tweets.part0 = ` from file, the goal is to make it a valid .json file
+   - Copy tweets.js from twitter archive to root directory
+   - Copy like.js from twitter archive to root directory (needed if you want to do unlike as well)
 
 3. **Set up the environment and install dependencies**
 
@@ -63,7 +63,8 @@ Please ensure to follow all guidelines and terms of service set by Twitter while
 5. **Run the script**
 
     ```sh
-    python main.py
+    python main.py --delete-tweet
+    python main.py --unlike
     ```
 
 Please note that the use of this script should be in accordance with Twitter's terms of service.

@@ -2,3 +2,8 @@
 __pycache__/
 *.py[cod]
 *.env  # Ignore actual .env file
+.env
+deleted.txt
+tweets.js
+like.js
+unliked.txt
