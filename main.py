@@ -5,6 +5,7 @@ import re
 from dotenv import load_dotenv
 import time
 from argparse import ArgumentParser
+from datetime import datetime
 
 load_dotenv()  # take environment variables from .env.
 
@@ -53,66 +54,70 @@ if not all([cookie, authorization, csrf_token, username, graphqlId]):
     print("One or more environment variables are not set.")
     exit(1)
     
-def unlike_tweet():
-    # Check if the like.js file exists
-    if not os.path.isfile("like.js"):
-        print("The file like.js does not exist.")
-        exit(1)
+def load_tweets(file_path):
+    try:  
+        file_name = file_path.split('/')[-1]
+        type = file_name.split('.')[0]
+        if not type:
+            raise Exception(f"Type is not specified")
+        # Check if the like.js file exists
+        if not os.path.isfile(file_path):
+            raise Exception(f"The file {file_path} does not exist.")
+        with open(file_path, 'r') as file:
+            js_text = file.read()
         
+        json_str = js_text.replace(f"window.YTD.{type}.part0 = ", '', 1)
+        tweets = json.loads(json_str)
+        return tweets
+    except IOError:
+        print("An error occurred while trying to read the file")
+        exit(1)
+    except Exception as e:
+        print(e)
+        exit(1)
+
+def filter_tweets(tweets, start_date, end_date=None):
+    filtered_tweets = []
+    if not start_date:
+        return tweets
+    # Set default value for end_date to today if not provided
+    if end_date is None:
+        end_date = datetime.today()
+    for tweet in tweets:
+        tweet_date = datetime.strptime(tweet['tweet']['created_at'], "%a %b %d %H:%M:%S +0000 %Y")
+        if (start_date is None or tweet_date >= start_date) and (end_date is None or tweet_date <= end_date):
+            filtered_tweets.append(tweet)
+    return filtered_tweets
+    
+def unlike_tweet(exclude_ids):
+    url = f"https://twitter.com/i/api/graphql/{graphqlId}/UnfavoriteTweet"
+    tweets = load_tweets('like.js')
     # Check if the unliked.txt file exists
     if not os.path.isfile("unliked.txt"):
         with open('unliked.txt', 'x') as file:
             file.close()
-        
-    url = f"https://twitter.com/i/api/graphql/{graphqlId}/UnfavoriteTweet"
-    
-    # Load the data from like.js
-    try:
-        # Read the like.js file as a text
-        with open('like.js', 'r') as file:
-            js_text = file.read()
-        
-        json_str = js_text.replace('window.YTD.like.part0 = ', '', 1)
-        tweets = json.loads(json_str)
-    except IOError:
-        print("An error occurred while trying to read the file like.js.")
-        exit(1)
 
     # Extract tweet IDs from tweets
     tweet_ids = [tweet["like"]["tweetId"] for tweet in tweets]
     
-    processor(url, tweet_ids, 'unliked.txt')
+    processor(url, tweet_ids, 'unliked.txt', exclude_ids)
         
-def delete_tweet():
-    # Check if the tweets.js file exists
-    if not os.path.isfile("tweets.js"):
-        print("The file tweets.js does not exist.")
-        exit(1)
+def delete_tweet(exclude_ids, start_date, end_date):
+    url = f"https://twitter.com/i/api/graphql/{graphqlId}/DeleteTweet"
+    tweets = load_tweets('tweets.js')
     # Check if the deleted.txt file exists
     if not os.path.isfile("deleted.txt"):
         with open('deleted.txt', 'x') as file:
             file.close()
             
-    url = f"https://twitter.com/i/api/graphql/{graphqlId}/DeleteTweet"
-    
-    # Load the data from tweets.js
-    try:
-        # Read the tweets.js file as a text
-        with open('tweets.js', 'r') as file:
-            js_text = file.read()
-        
-        json_str = js_text.replace('window.YTD.tweets.part0 = ', '', 1)
-        tweets = json.loads(json_str)
-    except IOError:
-        print("An error occurred while trying to read the file tweets.js.")
-        exit(1)
+    filtered_tweets = filter_tweets(tweets, start_date, end_date)
 
     # Extract tweet IDs from tweets
-    tweet_ids = [tweet["tweet"]["id"] for tweet in tweets]
+    tweet_ids = [tweet["tweet"]["id"] for tweet in filtered_tweets]
     
-    processor(url, tweet_ids, 'deleted.txt')
+    processor(url, tweet_ids, 'deleted.txt', exclude_ids)
 
-def processor(url, tweet_ids, processor_bucket):
+def processor(url, tweet_ids, processor_bucket, exclude_ids):
     data_length = len(tweet_ids)
     deleted_count = 0
     retries = 0
@@ -124,6 +129,10 @@ def processor(url, tweet_ids, processor_bucket):
                 print(f'Finished with {retries} retries')
                 break
             for tweet_id in tweet_ids:
+                if tweet_id in exclude_ids:
+                    print(f"Skipping excluded tweet with id: {tweet_id}")
+                    deleted_count += 1
+                    continue
                 with open(processor_bucket, 'r') as file:
                     items = [line.strip() for line in file]
                     if tweet_id in items:
@@ -166,14 +175,22 @@ def main():
     parser = ArgumentParser(description="Twitter Operations")
     parser.add_argument('--delete-tweet', action='store_true', help="Delete a tweet")
     parser.add_argument('--unlike', action='store_true', help="Unlike a tweet")
+    parser.add_argument('--exclude', help="Comma-separated list of tweet IDs to exclude")
+    parser.add_argument('--start-date', type=str, help="Start date for filtering tweets (YYYY-MM-DD)")
+    parser.add_argument('--end-date', type=str, help="End date for filtering tweets (YYYY-MM-DD)")
 
     args = parser.parse_args()
+    
+    exclude_ids = args.exclude.split(',') if args.exclude else []
+    
+    start_date = datetime.strptime(args.start_date, "%Y-%m-%d") if args.start_date else None
+    end_date = datetime.strptime(args.end_date, "%Y-%m-%d") if args.end_date else None
 
     # Perform actions based on command-line arguments
     if args.delete_tweet:
-        delete_tweet()
+        delete_tweet(exclude_ids, start_date, end_date)
     elif args.unlike:
-        unlike_tweet()
+        unlike_tweet(exclude_ids, start_date, end_date)
     else:
         print("No valid action provided. Use --delete-tweet or --unlike.")
 
