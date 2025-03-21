@@ -89,22 +89,28 @@ def filter_tweets(tweets, start_date, end_date=None):
             filtered_tweets.append(tweet)
     return filtered_tweets
     
-def unlike_tweet(exclude_ids):
+def unlike_tweet(exclude_ids, file_path=None, start_date=None, end_date=None):
     url = f"https://twitter.com/i/api/graphql/{graphqlId}/UnfavoriteTweet"
-    tweets = load_tweets('like.js')
+    # Use the provided file_path if available, otherwise default to like.js
+    likes_file = file_path if file_path and os.path.isfile(file_path) else 'like.js'
+    tweets = load_tweets(likes_file)
     # Check if the unliked.txt file exists
     if not os.path.isfile("unliked.txt"):
         with open('unliked.txt', 'x') as file:
             file.close()
 
+    filtered_tweets = filter_tweets(tweets, start_date, end_date)
+    
     # Extract tweet IDs from tweets
-    tweet_ids = [tweet["like"]["tweetId"] for tweet in tweets]
+    tweet_ids = [tweet["like"]["tweetId"] for tweet in filtered_tweets]
     
     processor(url, tweet_ids, 'unliked.txt', exclude_ids)
         
-def delete_tweet(exclude_ids, start_date, end_date):
+def delete_tweet(exclude_ids, start_date, end_date, file_path=None):
     url = f"https://twitter.com/i/api/graphql/{graphqlId}/DeleteTweet"
-    tweets = load_tweets('tweets.js')
+    # Use the provided file_path if available, otherwise default to tweets.js
+    tweets_file = file_path if file_path and os.path.isfile(file_path) else 'tweets.js'
+    tweets = load_tweets(tweets_file)
     # Check if the deleted.txt file exists
     if not os.path.isfile("deleted.txt"):
         with open('deleted.txt', 'x') as file:
@@ -178,6 +184,7 @@ def main():
     parser.add_argument('--exclude', help="Comma-separated list of tweet IDs to exclude")
     parser.add_argument('--start-date', type=str, help="Start date for filtering tweets (YYYY-MM-DD)")
     parser.add_argument('--end-date', type=str, help="End date for filtering tweets (YYYY-MM-DD)")
+    parser.add_argument('--file-path', type=str, help="Path to the file containing tweets to process (defaults to tweets.js or like.js)")
 
     args = parser.parse_args()
     
@@ -188,9 +195,9 @@ def main():
 
     # Perform actions based on command-line arguments
     if args.delete_tweet:
-        delete_tweet(exclude_ids, start_date, end_date)
+        delete_tweet(exclude_ids, start_date, end_date, args.file_path)
     elif args.unlike:
-        unlike_tweet(exclude_ids, start_date, end_date)
+        unlike_tweet(exclude_ids, args.file_path, start_date, end_date)
     else:
         print("No valid action provided. Use --delete-tweet or --unlike.")
 
